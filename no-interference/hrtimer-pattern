@@ -1,12 +1,11 @@
 $ trace-cmd record -e timer:hrtimer_start -e timer:hrtimer_expire_entry -e sched:sched_wakeup
 
-# Il processo cyclictest (pid 1538) imposta regolarmente la sua sveglia hardware (hrtimer_start).
-# Al momento della scadenza, l'evento hrtimer_expire_entry viene esplicitamente preso in carico dal thread del kernel ktimers/1 con pid 27. E' lo stesso thread ktimers/1 a generare l'evento sched_wakeup, reinserendo correttamente cyclictest
-# Si può dire che la gestione dell'interrupt del timer viene deferita allo specifico kthread ktimers, da poter minimizzare il tempo in cui il sistema è costretto a tenere gli interrupt hardware disabilitati.
+The cyclictest process (PID 1538) regularly sets its hardware alarm via hrtimer_start. At the expiration point, the hrtimer_expire_entry event is explicitly handled by the kernel thread ktimers/1 (PID 27). This same ktimers/1 thread generates the sched_wakeup event, correctly re-inserting cyclictest into the scheduler.
+This demonstrates that timer interrupt management is deferred to the specific ktimers kthread. This mechanism minimizes the duration during which the system is forced to keep hardware interrupts disabled.
+The behavior is consistent with what is observed in the cyclictest-loop-pattern trace file.
 
-# Questo comportamento coincide con quello visto all'interno della traccia presente nel file `cyclictest-loop-pattern`.
-#
-# Per la traccia completa relativa ai timer, consultare il file `hrtimer-full-trace`
+For the complete trace regarding timers, please refer to the hrtimer-full-trace file.
+
 
 ktimers/1-27    [001]   595.551820: hrtimer_expire_entry: hrtimer=0xffff80008430bd30 function=hrtimer_wakeup now=595546652000
        ktimers/1-27    [001]   595.551823: sched_wakeup:         comm=cyclictest pid=1538 prio=120 target_cpu=001

@@ -1,22 +1,23 @@
 $ trace-cmd -p wakeup_rt
 
-Questo tracer salva solo e la latenza più alta registrata a livello di sistema da qualsiasi task con priorità RT.
-Questra traccia mostra il record della peggior latenza di scheduling catturata durante l'esecuzione (in questo caso, un ritardo di 230 µs). 
-Analizzando il log, notiamo che l'evento registrato non è correlato al thread cyclictest, ma riguarda il risveglio di un processo kernel dedicato alla gestione dell'interfaccia di comunicazione: irq/32-imx_mu_c (poid 122).
+This tracer only saves the highest latency recorded at the system level by any RT priority task. This trace shows the record of the worst scheduling latency captured during execution (in this case, a delay of 230 µs).
 
-`cyclictest`, risvegliandosi "solo" ogni 2 secondi, subisce latenze inferiori a questa soglia. Di conseguenza, i suoi risvegli subiscono mai un ritardo superiore al massimo già registrato nel sistema, e il tracer scarta i suoi log, lasciando visibile solo il record peggiore.
+Analyzing the log, we notice that the recorded event is not related to the cyclictest thread, but concerns the wakeup of a kernel process dedicated to managing the communication interface: irq/32-imx_mu_c (PID 122).
 
-- la prima stack trace è una foto che viene scatta (dalla funzione probe_wakeup) alla wakeup, ed è lo stato del waker
+Since cyclictest wakes up "only" every 2 seconds, it experiences latencies below this threshold. Consequently, its wakeups never suffer a delay higher than the maximum already recorded in the system, and the tracer discards its logs, leaving only the worst record visible.
 
-- la seconda stack trace è una foto che viene scattata (dalla funzione probe_wakeup_sched_switch) all'atto del context switch, che quasi certamente accade nella funzione __schedule. Fornisce lo stato del processo che ha eseguito la __schedule. Potrebbe tanto essere il waker stesso, perché è arrivato alla __schedule direttamente nella stessa call chain della wakeup, quanto un diverso processo, che è stato interrotto da un interrupt. L'handler di tale interrupt è il codice che arriva ad eseguire la __schedule
+    The first stack trace is a snapshot taken (by the probe_wakeup function) at the moment of wakeup, showing the state of the waker.
 
-NOTA: anche nel caso di waker che coincide con l'esecutore di __schedule, la seconda stack trace può non essere un sovrainsieme della prima, perché tra la wakeup e la __schedule, il waker può aver concluso l'esecuzione di funzioni che erano ancora da concludere all'atto della wakeup
+    The second stack trace is a snapshot taken (by the probe_wakeup_sched_switch function) during the context switch, which almost certainly occurs within the __schedule function. it provides the state of the process that executed __schedule. This could be the waker itself, if it reached __schedule directly within the same call chain as the wakeup, or a different process that was interrupted by an IRQ. The handler for that interrupt is the code that eventually executes __schedule.
 
-La parte di traccia tra le due stack trace mostra tutto quello che fa la CPU su cui andrà in esecuzione il task svegliato. In particolare mostra ciò che tale CPU fa tra l'istante in cui il task viene svegliato e l'istante in cui il task finalmente va in esecuzione. Lo mostra col formato del function tracer.
+NOTE: Even when the waker and the process executing __schedule are the same, the second stack trace might not be a superset of the first. This is because between the wakeup and __schedule, the waker may have completed functions that were still pending at the time of the wakeup.
 
-Per nostra sfortuna, è molto complessa, perché accade una cosa particolare. Nel mezzo della attesa di schedulazione del task, arriva un secondo interrupt, ed è quel secondo interrupt che porta alla schedule. Per quel motivo, le due stack trace all'inizio ed alla fine non hanno niente a che fare l'una con l'altra
+The trace section between the two stack traces shows everything the CPU (where the awakened task will run) does between the moment the task is woken up and the moment it finally starts execution. It uses the function tracer format.
 
-La riga in cui si vede l'arrivo del nuovo interrupt è questa: `kworker/-130       0dN..1   67us : preempt_schedule_irq <-el1_interrupt`
+Unfortunately, it is very complex due to a specific occurrence: during the task's scheduling wait, a second interrupt arrives, and it is this second interrupt that leads to the schedule. For this reason, the two stack traces at the beginning and end have no relation to each other.
+
+The line showing the arrival of the new interrupt is:
+kworker/-130       0dN..1    67us : preempt_schedule_irq <-el1_interrupt
 
 
 cpus=4

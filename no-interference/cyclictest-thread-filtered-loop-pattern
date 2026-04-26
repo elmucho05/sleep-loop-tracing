@@ -1,4 +1,21 @@
-1 fase addormentamento del thread
+In one terminal :
+$ cyclictest -t 1 -a 1 -i 2000000 -q
+
+In another terminal:
+$ trace-cmd record -p function_graph
+$ trace-cmd report > cyclictest-thread-loop-full-trace
+
+# looking at the full-trace file we noticed some activities regarding cyclictest on cores 001 and 003 
+# so we decided to filter the full trace file for activities happening just on these cores via:
+
+$ sed '/\[001\]d/' | sed '/\[003\]d/ > nomefile
+
+
+# Then we identified the cyclictest phases which are characteristic of a "wake-up loop" (they repeat every 2 seconds)
+
+
+PHASE #1  : cyclictest goes to sleep
+
       cyclictest-1429  [003]   282.395656: funcgraph_entry:                   |  do_el0_svc() {
       cyclictest-1429  [003]   282.395657: funcgraph_entry:                   |    el0_svc_common.constprop.0() {
       cyclictest-1429  [003]   282.395659: funcgraph_entry:                   |      syscall_trace_enter() {
@@ -188,11 +205,10 @@
 .....
 .....
 .....
-Arriva il timer interrupt dell'handler, siamo a tempo 284 adesso, quindi 2 secondi dopo
-.....
-.....
-.....
-.....
+After 2 seconds, cyclictest needs to wake up. Some prior work is required though.
+
+PHASE #2 : Interrupt Handler
+
           <idle>-0     [001]   284.394560: funcgraph_entry:                   |      do_interrupt_handler() {
           <idle>-0     [001]   284.394561: funcgraph_entry:                   |        gic_handle_irq() {
           <idle>-0     [001]   284.394562: funcgraph_entry:                   |          generic_handle_domain_irq() {
@@ -363,13 +379,6 @@ Arriva il timer interrupt dell'handler, siamo a tempo 284 adesso, quindi 2 secon
           <idle>-0     [001]   284.394711: funcgraph_exit:         4.000 us   |      }
           <idle>-0     [001]   284.394711: funcgraph_entry:                   |      mte_thread_switch() {
           <idle>-0     [001]   284.394712: funcgraph_exit:         0.750 us   |      }
-...
-...
-...
-2. Qua parte il thread che gestisce l'interrupt
-...
-...
-...
        ktimers/1-27    [001]   284.394714: funcgraph_entry:                   |    finish_task_switch.isra.0() {
        ktimers/1-27    [001]   284.394715: funcgraph_exit:         1.750 us   |    }
        ktimers/1-27    [001]   284.394717: funcgraph_entry:                   |    preempt_count_sub() {
@@ -530,13 +539,6 @@ Arriva il timer interrupt dell'handler, siamo a tempo 284 adesso, quindi 2 secon
        ktimers/1-27    [001]   284.394912: funcgraph_exit:         1.625 us   |  }
        ktimers/1-27    [001]   284.394913: funcgraph_entry:                   |  preempt_count_sub() {
        ktimers/1-27    [001]   284.394915: funcgraph_exit:         1.625 us   |  }
-     .........
-     .........
-     .........
-     qui ktimer seleziona il prossimo task da schedulare
-     .........
-     .........
-     .........
        ktimers/1-27    [001]   284.394916: funcgraph_entry:                   |  schedule() {
        ktimers/1-27    [001]   284.394918: funcgraph_entry:                   |    preempt_count_add() {
        ktimers/1-27    [001]   284.394919: funcgraph_exit:         1.625 us   |    }
@@ -1489,14 +1491,11 @@ Arriva il timer interrupt dell'handler, siamo a tempo 284 adesso, quindi 2 secon
           <idle>-0     [003]   284.395594: funcgraph_entry:                   |      mte_thread_switch() {
      ksoftirqd/1-28    [001]   284.395595: funcgraph_exit:         1.625 us   |        }
           <idle>-0     [003]   284.395595: funcgraph_exit:         0.875 us   |      }
-.......
-.......
-.......
-schedule ed uscita dalla sleep
-.......
-.......
-.......
-      cyclictest-1429  [003]   284.395597: funcgraph_entry:                   |                  finish_task_switch.isra.0() {
+     
+
+PHASE #3 WAKE UP: cyclictest WAKES UP after 2 seconds
+
+     cyclictest-1429  [003]   284.395597: funcgraph_entry:                   |                  finish_task_switch.isra.0() {
      ksoftirqd/1-28    [001]   284.395598: funcgraph_exit:         1.625 us   |        }
      ksoftirqd/1-28    [001]   284.395599: funcgraph_exit:         7.875 us   |      }
       cyclictest-1429  [003]   284.395599: funcgraph_exit:         2.500 us   |                  }
@@ -1594,3 +1593,9 @@ schedule ed uscita dalla sleep
       cyclictest-1429  [003]   284.395663: funcgraph_exit:       + 22.125 us  |    }
      ksoftirqd/1-28    [001]   284.395664: funcgraph_entry:                   |    __local_bh_enable() {
       cyclictest-1429  [003]   284.395665: funcgraph_exit:       + 36.750 us  |  }
+      .....
+      .....
+
+PHASE #4 SLEEPING: cyclictest goes to sleep
+
+

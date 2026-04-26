@@ -1,15 +1,11 @@
 $ trace-cmd record -p irqsoff
 
-Dalla documentazione ufficile : 
+From the official documentation: 
 > The irqsoff tracer tracks the time for which interrupts are disabled. When a new maximum latency is hit, the tracer saves the trace leading up to that latency point so that every time a new maximum is reached, the old saved trace is discarded and the new trace is saved.
 
-Questa traccia mostra il task che ha subito il massimo ritardo dovuto agli interrupt disabilitati.
-Scorrendo il log e lo stack trace finale, è evidente che il blocco non è avvenuto in spazio utente. Il responsabile è un thread interno del kernel (kworker/0:1-8) che stava gestendo un'interrupt hw.
 
-
-Il tracer irqsoff monitora lo stato hardware globale della CPU, ignorando la logica dei singoli processi o PID. 
-Il fatto che `cyclictest` non compaia significa che il codice di cyclictest non causa mai la disabilitazione prolungata degli interrupt. 
-
+This trace highlights the task that experienced the maximum latency due to disabled interrupts. By examining the log and the final stack trace, it is evident that the block did not occur in user space. The responsible party is a kernel worker thread (kworker/0:1-8) that was handling a hardware interrupt.
+The irqsoff tracer monitors the global hardware state of the CPU, ignoring the logic of individual processes or PIDs. The absence of cyclictest from this trace indicates that the cyclictest code itself never causes interrupts to be disabled for a prolonged period.
 
 
 

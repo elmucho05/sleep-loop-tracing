@@ -1,5 +1,18 @@
-1 fase addormentamento del thread
-      cyclictest-1429  [003]   282.395656: funcgraph_entry:                   |  do_el0_svc() {
+In one terminal :
+$ cyclictest -t 1 -a 1 -i 2000000 -q
+
+In another terminal:
+$ trace-cmd record -p function_graph
+$ trace-cmd report > cyclictest-thread-loop-full-trace
+
+This file rappresents full trace of whats happening in the kernel at the maximum depth. 
+In particular, it shows the moment cyclictest goes to sleep and all of what happens before, during and after the waking up process.
+
+Note: this beeing a full trace, contains some noise providing from the other cores, so it needs filtering in order to have a clearer vision of cyclictest in the kernel.
+
+
+
+cyclictest-1429  [003]   282.395656: funcgraph_entry:                   |  do_el0_svc() {
      kworker/0:1-8     [000]   282.395656: funcgraph_entry:        0.875 us   |                                              task_woken_rt();
       cyclictest-1429  [003]   282.395657: funcgraph_entry:                   |    el0_svc_common.constprop.0() {
      kworker/0:1-8     [000]   282.395658: funcgraph_exit:       + 19.000 us  |                                            }
@@ -793,14 +806,7 @@
           <idle>-0     [001]   284.394712: funcgraph_exit:         0.750 us   |      }
  irq/28-imx_mu_c-118   [000]   284.394713: funcgraph_entry:        0.875 us   |          try_to_take_rt_mutex();
        trace-cmd-1519  [002]   284.394713: funcgraph_entry:                   |                                          migrate_disable() {
-...
-...
-...
-2. Qua parte il thread che gestisce l'interrupt
-...
-...
-...
-ktimers/1-27    [001]   284.394714: funcgraph_entry:                   |    finish_task_switch.isra.0() {
+       ktimers/1-27    [001]   284.394714: funcgraph_entry:                   |    finish_task_switch.isra.0() {
  irq/28-imx_mu_c-118   [000]   284.394714: funcgraph_entry:                   |          _raw_spin_unlock_irq() {
        trace-cmd-1519  [002]   284.394715: funcgraph_entry:                   |                                            preempt_count_add() {
        ktimers/1-27    [001]   284.394715: funcgraph_exit:         1.750 us   |    }
@@ -1003,13 +1009,6 @@ ktimers/1-27    [001]   284.394714: funcgraph_entry:                   |    fini
        ktimers/1-27    [001]   284.394802: funcgraph_exit:         4.625 us   |          }
        trace-cmd-1519  [002]   284.394802: funcgraph_exit:         1.625 us   |                                      }
      kworker/0:1-8     [000]   284.394802: funcgraph_entry:        0.750 us   |                              preempt_count_add();
-.........
-.........
-.........
-     3. Risveglio
-.........
-.........
-.........
        ktimers/1-27    [001]   284.394804: funcgraph_entry:                   |          hrtimer_wakeup() {
        trace-cmd-1519  [002]   284.394804: funcgraph_exit:       + 14.000 us  |                                    }
      kworker/0:1-8     [000]   284.394805: funcgraph_exit:         2.500 us   |                            }
@@ -1301,13 +1300,6 @@ ktimers/1-27    [001]   284.394714: funcgraph_entry:                   |    fini
      kworker/0:1-8     [000]   284.394915: funcgraph_exit:       + 13.000 us  |                                    }
        trace-cmd-1519  [002]   284.394915: funcgraph_entry:                   |                                        preempt_count_add() {
      kworker/0:1-8     [000]   284.394916: funcgraph_exit:       + 14.625 us  |                                  }
-     .........
-     .........
-     .........
-     qui ktimer seleziona il prossimo task da schedulare
-     .........
-     .........
-     .........
        ktimers/1-27    [001]   284.394916: funcgraph_entry:                   |  schedule() {
        trace-cmd-1519  [002]   284.394917: funcgraph_exit:         1.625 us   |                                        }
      kworker/0:1-8     [000]   284.394917: funcgraph_entry:                   |                                  check_preempt_curr() {
@@ -3504,14 +3496,7 @@ ktimers/1-27    [001]   284.394714: funcgraph_entry:                   |    fini
           <idle>-0     [003]   284.395595: funcgraph_exit:         0.875 us   |      }
      kworker/0:1-8     [000]   284.395595: funcgraph_exit:       + 53.875 us  |                      }
        trace-cmd-1519  [002]   284.395596: funcgraph_exit:         1.500 us   |                    }
-.......
-.......
-.......
-schedule ed uscita dalla sleep
-.......
-.......
-.......
-      cyclictest-1429  [003]   284.395597: funcgraph_entry:                   |                  finish_task_switch.isra.0() {
+     cyclictest-1429  [003]   284.395597: funcgraph_entry:                   |                  finish_task_switch.isra.0() {
      kworker/0:1-8     [000]   284.395597: funcgraph_entry:                   |                      preempt_count_sub() {
        trace-cmd-1519  [002]   284.395597: funcgraph_exit:         7.750 us   |                  }
      ksoftirqd/1-28    [001]   284.395598: funcgraph_exit:         1.625 us   |        }

@@ -26,17 +26,25 @@ Options :
 > `trace-cmd` provides the `-b` option to specify the buffer size. **Warning:** Do not set this value too high, as the maximum capacity depends on the specific hardware. A recommended starting point is `-b 100000` and try to increase it depending on the board's memory.
 
 
+## Trace recording and analysis
 
-> 
-> 
+The traces have been recorder via the `trace-cmd` command which is a front-end for `ftrace`. It also provides  the option to choose the tracer without having to write to `/sys/kernel/debug/tracing/current_tracer`
+
+```bash
+trace-cmd record <tracer_name>
+```
+
+Traces were recorded using the `function_graph`, `irqsoff` and `wakeup_rt` tracers without any specification on the depth of the recording, which means that we are recording at the maximum depth that's happening on the kernel. This generates a `trace.dat` file which in order to be of any use needs to be translated to a plaintext file via the following command:
+
+```bash
+trace-cmd report > <filename>
+```
 
 
+For more details on the specific traces(commands run to generate them and results), consult the trace files themeselves.
 
-
-
-
-
-
+> [!TIP]
+> You may see two similar trace files for each of traces. This is because we are providing the full trace and also an extraction of parts which we use to draw our conclusions
 
 
 
