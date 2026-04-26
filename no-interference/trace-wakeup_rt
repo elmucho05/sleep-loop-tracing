@@ -8,13 +8,17 @@ Since cyclictest wakes up "only" every 2 seconds, it experiences latencies below
 
     The first stack trace is a snapshot taken (by the probe_wakeup function) at the moment of wakeup, showing the state of the waker.
 
-    The second stack trace is a snapshot taken (by the probe_wakeup_sched_switch function) during the context switch, which almost certainly occurs within the __schedule function. it provides the state of the process that executed __schedule. This could be the waker itself, if it reached __schedule directly within the same call chain as the wakeup, or a different process that was interrupted by an IRQ. The handler for that interrupt is the code that eventually executes __schedule.
+    The second stack trace is a snapshot taken (by the probe_wakeup_sched_switch function) during the context switch, which almost certainly occurs within the __schedule function. 
+    it provides the state of the process that executed __schedule. This could be the waker itself, if it reached __schedule directly within the same call chain as the wakeup, or a different process that was interrupted by an IRQ. 
+    The handler for that interrupt is the code that eventually executes __schedule.
 
-NOTE: Even when the waker and the process executing __schedule are the same, the second stack trace might not be a superset of the first. This is because between the wakeup and __schedule, the waker may have completed functions that were still pending at the time of the wakeup.
+NOTE: Even when the waker and the process executing __schedule are the same, the second stack trace might not be a superset of the first. 
+This is because between the wakeup and __schedule, the waker may have completed functions that were still pending at the time of the wakeup.
 
 The trace section between the two stack traces shows everything the CPU (where the awakened task will run) does between the moment the task is woken up and the moment it finally starts execution. It uses the function tracer format.
 
-Unfortunately, it is very complex due to a specific occurrence: during the task's scheduling wait, a second interrupt arrives, and it is this second interrupt that leads to the schedule. For this reason, the two stack traces at the beginning and end have no relation to each other.
+Unfortunately, it is very complex due to a specific occurrence: during the task's scheduling wait, a second interrupt arrives, and it is this second interrupt that leads to the schedule. 
+For this reason, the two stack traces at the beginning and end have no relation to each other.
 
 The line showing the arrival of the new interrupt is:
 kworker/-130       0dN..1    67us : preempt_schedule_irq <-el1_interrupt
