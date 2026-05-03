@@ -2,6 +2,18 @@ The following directory will contain the output of what was generated with `perf
 
 Each output file contains the generated stats and the command options used to generate them.
 
+# Useful options for `perf stat`
+
+| **Option**      | **Name**                 | **Description**                                                                                                                                                |
+| --------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`-e`**        | **Event**                | Specifies the list of hardware events to monitor(comma separated)                                                                                              |
+| **`-a`**        | **All CPUs**             | Gather data from all of the cores(default if no target is specified)                                                                                           |
+| **`-A`**        | **No aggregation**       | Shows the results per core, does not aggregate them                                                                                                            |
+| **`-C <n>`**    | **Core**                 | Monitors just the specified core                                                                                                                               |
+| **`-p <PID>`**  | **PID**                  | Hooks to the specified process via the pid                                                                                                                     |
+| `-d`            | **Detailed**             | Print more detailed statistics, can be specified up to 3 times. Detailed events, L1 and LLC data cache. But you can add up to 2 more `-d` to have more events. |
+| **`-o`**        | **Output file**          | Save stat output to file                                                                                                                                       |
+| **`report -i`** | **Read from input file** | Perf stat with reports what it reads from a perf.data file                                                                                                     |
 
 # Tests and results
 
@@ -166,4 +178,86 @@ CPU3                    15338      l2d_cache_refill
 
 ### Stress tests to check `cache refill`
 
+> [!NOTE]
+> To check how our cache behaves under memory interference, the tool `meminterf` from the ![HeSoC-mark](https://git.hipert.unimore.it/mem-prof/hesoc-mark/-/tree/master?ref_type=heads) was used with the following options which specify buffer size and number of iterations : `-s 4` and `-i 100000000`
+
+
+```bash
+$ perf stat -e l2d_cache,l2d_cache_refill cyclictest -t 1 -a 1 -p 99 -i 1000 -D 10 -q
+# /dev/cpu_dma_latency set to 0us
+T: 0 ( 1966) P:99 I:1000 C:  10000 Min:      9 Act:   12 Avg:   13 Max:      87
+
+ Performance counter stats for 'cyclictest -t 1 -a 1 -p 99 -i 1000 -D 10 -q':
+
+           4577250      l2d_cache                                                   
+             17863      l2d_cache_refill                                            
+
+      10.058185619 seconds time elapsed
+
+       0.000000000 seconds user
+       0.116981000 seconds sys
+       
+
+# Then in another terminal we launch meminterf pinned to the another core:
+$ taskeset -c 2 meminterf -s 4 -i 1000000000
+
+# While meminterf is running we execute perf stat again the see if any happens to cache refills:
+
+$ perf stat -e l2d_cache,l2d_cache_refill cyclictest -t 1 -a 1 -p 99 -i 1000 -D 10 -q 
+# /dev/cpu_dma_latency set to 0us
+T: 0 ( 1970) P:99 I:1000 C:  10000 Min:     14 Act:   52 Avg:   50 Max:      82
+
+ Performance counter stats for 'cyclictest -t 1 -a 1 -p 99 -i 1000 -D 10 -q':
+
+           4554901      l2d_cache                                                   
+           2576839      l2d_cache_refill                                            
+
+      10.060475653 seconds time elapsed
+
+       0.000000000 seconds user
+       0.421070000 seconds sys
+```
+
+
+
+```bash
+$ perf stat -a -A -e l2d_cache,l2d_cache_refill cyclictest -t 1 -a 1 -p 99 -i 1000 -D 5 -q
+# /dev/cpu_dma_latency set to 0us
+T: 0 ( 1976) P:99 I:1000 C:   5000 Min:      7 Act:    8 Avg:    8 Max:      18
+
+ Performance counter stats for 'system wide':
+
+CPU0                   604892      l2d_cache                                                   
+CPU1                  5286214      l2d_cache                                                   
+CPU2                   141143      l2d_cache                                                   
+CPU3                   152816      l2d_cache                                                   
+CPU0                    11813      l2d_cache_refill                                            
+CPU1                    14790      l2d_cache_refill                                            
+CPU2                    17472      l2d_cache_refill                                            
+CPU3                    11649      l2d_cache_refill                                            
+
+       5.058138864 seconds time elapsed
+       
+# Then in another terminal we launch meminterf pinned to the another core:
+$ taskeset -c 2 meminterf -s 4 -i 1000000000
+
+# While meminterf is running we execute perf stat again the see if any happens to cache refills:
+
+$ perf stat -a -A -e l2d_cache,l2d_cache_refill cyclictest -t 1 -a 1 -p 99 -i 1000 -D 5 -q
+# /dev/cpu_dma_latency set to 0us
+T: 0 ( 1980) P:99 I:1000 C:   5000 Min:     13 Act:   36 Avg:   35 Max:      64
+
+ Performance counter stats for 'system wide':
+
+CPU0                   668810      l2d_cache                                                   
+CPU1                  5260963      l2d_cache                                                   
+CPU2                560706935      l2d_cache                                                   
+CPU3                   176463      l2d_cache                                                   
+CPU0                   248106      l2d_cache_refill                                            
+CPU1                  3228962      l2d_cache_refill                                            
+CPU2                186936562      l2d_cache_refill                                            
+CPU3                    62410      l2d_cache_refill                                            
+
+       5.064043524 seconds time elapsed
+```
 
