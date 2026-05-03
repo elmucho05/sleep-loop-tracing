@@ -7,9 +7,9 @@ Each output file contains the generated stats and the command options used to ge
 
 #### Generic tests with L1 cache
 ```bash
-perf list cache # to see the available performance counters for the board
+$ perf list cache # to see the available performance counters for the board
 
-perf stat -a -A -e L1-dcache-loads,L1-dcache-load-misses sleep 5
+$ perf stat -a -A -e L1-dcache-loads,L1-dcache-load-misses sleep 5
 
 
 # OUTPUT:
@@ -30,7 +30,7 @@ CPU3                    28803      L1-dcache-load-misses     #    6.33% of all L
 
 
 ```bash
-perf stat -e L1-dcache-loads,L1-dcache-load-misses sleep 5
+$ perf stat -e L1-dcache-loads,L1-dcache-load-misses sleep 5
 
  Performance counter stats for 'sleep 5':
 
@@ -46,7 +46,7 @@ perf stat -e L1-dcache-loads,L1-dcache-load-misses sleep 5
 
 
 ```bash
-perf stat -e L1-dcache-loads,L1-dcache-load-misses sleep 5
+$ perf stat -e L1-dcache-loads,L1-dcache-load-misses sleep 5
 
  Performance counter stats for 'sleep 5':
 
@@ -61,7 +61,7 @@ perf stat -e L1-dcache-loads,L1-dcache-load-misses sleep 5
 
 
 ```bash
-perf stat -e L1-dcache-loads,L1-dcache-load-misses cyclictest -t 1 -p 99 -i 1000 -D 10 -q
+$ perf stat -e L1-dcache-loads,L1-dcache-load-misses cyclictest -t 1 -p 99 -i 1000 -D 10 -q
 # /dev/cpu_dma_latency set to 0us
 T: 0 ( 1934) P:99 I:1000 C:  10000 Min:     14 Act:   53 Avg:   55 Max:      90
 
@@ -77,7 +77,7 @@ T: 0 ( 1934) P:99 I:1000 C:  10000 Min:     14 Act:   53 Avg:   55 Max:      90
 
 #######
 # WE REPEAT THE SAME TEST with a hot cache
-perf stat -e L1-dcache-loads,L1-dcache-load-misses cyclictest -t 1 -p 99 -i 1000 -D 10 -q
+$ perf stat -e L1-dcache-loads,L1-dcache-load-misses cyclictest -t 1 -p 99 -i 1000 -D 10 -q
 # /dev/cpu_dma_latency set to 0us
 T: 0 ( 1937) P:99 I:1000 C:  10000 Min:     11 Act:   14 Avg:   13 Max:      31
 
@@ -96,14 +96,15 @@ T: 0 ( 1937) P:99 I:1000 C:  10000 Min:     11 Act:   14 Avg:   13 Max:      31
 
 #### Generic tests with L2 cache
 ```bash
-# Depending on the board, there may be performance counter which offer more information. This particular board has only the following counters regarding the l2 cache:
+# Depending on the board, there may be performance counter which offer more information. 
+# This particular board has only the following counters regarding the l2 cache:
 
 # to check thoroughly for your available counters
-perf list 
+$ perf list 
 
 # then launch the test 
 
-perf stat -e l2d_cache,l2d_cache_refill cyclictest -t 1 -p 99 -i 1000 -D 10 -q
+$ perf stat -e l2d_cache,l2d_cache_refill cyclictest -t 1 -p 99 -i 1000 -D 10 -q
 # /dev/cpu_dma_latency set to 0us
 T: 0 ( 1945) P:99 I:1000 C:  10000 Min:     11 Act:   13 Avg:   13 Max:      28
 
@@ -119,7 +120,7 @@ T: 0 ( 1945) P:99 I:1000 C:  10000 Min:     11 Act:   13 Avg:   13 Max:      28
        
        
 # same test with hot cache
-perf stat -e l2d_cache,l2d_cache_refill cyclictest -t 1 -p 99 -i 1000 -D 10 -q
+$ perf stat -e l2d_cache,l2d_cache_refill cyclictest -t 1 -p 99 -i 1000 -D 10 -q
 # /dev/cpu_dma_latency set to 0us
 T: 0 ( 1950) P:99 I:1000 C:  10000 Min:     11 Act:   14 Avg:   13 Max:      33
 
@@ -138,7 +139,7 @@ T: 0 ( 1950) P:99 I:1000 C:  10000 Min:     11 Act:   14 Avg:   13 Max:      33
 
 ### Generic test L1 and L2 not aggregated per CPU
 ```bash
-perf stat -a -A -e L1-dcache-loads,L1-dcache-load-misses,l2d_cache,l2d_cache_refill sleep 5
+$ perf stat -a -A -e L1-dcache-loads,L1-dcache-load-misses,l2d_cache,l2d_cache_refill sleep 5
 
  Performance counter stats for 'system wide':
 
